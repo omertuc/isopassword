@@ -2,19 +2,17 @@
 
 set -euo pipefail
 
-# Where did you download the .iso to?
-DISCOVERY_ISO_HOST_PATH=/tmp/tmp.GtcQqzTn4y/discovery_image_test.iso
+read -r -p "Enter the path to the discovery ISO: " DISCOVERY_ISO_HOST_PATH
 
-# After changing the above path, simply run this script as-is to create the ISO with your password
 if [[ ! -f $DISCOVERY_ISO_HOST_PATH ]]; then
     echo "ERROR: Discovery ISO not found at $DISCOVERY_ISO_HOST_PATH"
 else
-    DISCOVERY_ISO_HOST_DIR=$(dirname $DISCOVERY_ISO_HOST_PATH)
+    DISCOVERY_ISO_HOST_DIR=$(dirname "$DISCOVERY_ISO_HOST_PATH")
     function COREOS_INSTALLER() {
         podman run -v "$DISCOVERY_ISO_HOST_DIR":/data --rm quay.io/coreos/coreos-installer:release "$@"
     }
 
-    ISO_NAME=$(basename $DISCOVERY_ISO_HOST_PATH .iso)
+    ISO_NAME=$(basename "$DISCOVERY_ISO_HOST_PATH" .iso)
 
     # Container paths
     DISCOVERY_ISO_PATH=/data/${ISO_NAME}.iso
