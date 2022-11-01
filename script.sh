@@ -2,11 +2,15 @@
 
 set -euo pipefail
 
-read -r -p "Enter the path to the discovery ISO: " DISCOVERY_ISO_HOST_PATH
+if [[ $# -ne 1 ]]; then
+    echo "Usage: $0 <path to discovery .iso>"
+    exit 1
+fi
 
-if [[ ! -f $DISCOVERY_ISO_HOST_PATH ]]; then
-    echo "ERROR: Discovery ISO not found at $DISCOVERY_ISO_HOST_PATH"
+if [[ ! -f $1 ]]; then
+    echo "ERROR: Discovery ISO not found at $1"
 else
+    DISCOVERY_ISO_HOST_PATH="$1"
     DISCOVERY_ISO_HOST_DIR=$(dirname "$DISCOVERY_ISO_HOST_PATH")
     function COREOS_INSTALLER() {
         podman run -v "$DISCOVERY_ISO_HOST_DIR":/data --rm quay.io/coreos/coreos-installer:release "$@"
@@ -28,6 +32,16 @@ else
     TRANSFORMED_IGNITION_PATH=$(mktemp --tmpdir="$DISCOVERY_ISO_HOST_DIR")
     TRANSFORMED_IGNITION_NAME=$(basename "$TRANSFORMED_IGNITION_PATH")
     COREOS_INSTALLER iso ignition show "$DISCOVERY_ISO_PATH" | jq --arg pass "$USER_PASSWORD" '.passwd.users[0].passwordHash = $pass' > "$TRANSFORMED_IGNITION_PATH"
+
+    if [[ -f "$DISCOVERY_ISO_WITH_PASSWORD_HOST" ]] ; then
+        echo "ERROR: $DISCOVERY_ISO_WITH_PASSWORD_HOST already exists"
+        echo "Would you like to overwrite it? [y/N]"
+        read -r OVERWRITE
+        if [[ "$OVERWRITE" != "y" ]]; then
+            echo "Exiting"
+            exit 1
+        fi
+    fi
 
     # Generate new ISO
     rm -f "$DISCOVERY_ISO_WITH_PASSWORD_HOST" \
